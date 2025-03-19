@@ -16,7 +16,7 @@ else:
         pass
 
 HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", 8000))
+PORT = int(os.getenv("PORT", 8080))
 DEVELOPMENT = os.getenv("DEVELOPMENT", "True").lower() == "true"
 
 if __name__ == "__main__":
