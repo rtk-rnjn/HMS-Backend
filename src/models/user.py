@@ -15,6 +15,7 @@ class User(BaseModel):
     id: int = Field(..., alias="_id")
     email_address: str
     password: str
+    role: Role
 
 
 class Admin(User):
