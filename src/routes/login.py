@@ -1,29 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 from pymongo.results import InsertOneResult
 
 from src.app import app, mongo_client
-from src.models import User
+from src.models import CreateResponse, UpdateResponse, User
 from type import UpdateResult
 
 __all__ = ("create_user", "update_user", "fetch_user")
 
 router = APIRouter(prefix="/user", tags=["User"])
-
-
-class CreateResponse(BaseModel):
-    success: bool
-    inserted_id: str
-
-
-class UpdateResponse(BaseModel):
-    success: bool
-    modified_count: int
-    detail: Optional[str] = None
 
 
 async def _fetch_user(*, email_address: str, password: str) -> User:

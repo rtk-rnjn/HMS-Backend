@@ -22,7 +22,8 @@ class Admin(User):
     role: str = Role.ADMIN
 
 
-class Doctor(User):
+class Staff(User):
+    name: str
     role: str = Role.DOCTOR
 
 

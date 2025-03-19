@@ -1,0 +1,8 @@
+Hi {0}
+
+Your account has been created successfully. Here are your login details:
+
+Email: {1}
+Password: {2}
+
+Thanks
