@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import EmailStr
 from pymongo.results import InsertOneResult
 
 from src.app import app, mongo_client

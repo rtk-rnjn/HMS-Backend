@@ -15,8 +15,32 @@ with open("src/utils/email-body-account-created.txt") as file:
     email_body = file.read()
 
 
+@router.get("/staff/{staff_id}")
+async def fetch_staff_by_id(request: Request, staff_id: str) -> Staff:
+    """
+    Fetch a staff member.
+    """
+    collection = database["users"]
+    staff = await collection.find_one({"_id": staff_id})
+    return Staff.model_validate(staff)
+
+
+@router.get("/staff")
+async def fetch_staff_by_email(
+    request: Request, email_address: str, password: str
+) -> Staff:
+    """
+    Fetch all staff members by department.
+    """
+    collection = database["users"]
+    staff = await collection.find_one(
+        {"email_address": email_address, "password": password}
+    )
+    return Staff(**staff)
+
+
 @router.post("/staff")
-async def create_staff(request: Request, staff: Staff) -> Staff:
+async def create_staff(request: Request, staff: Staff) -> CreateResponse:
     """
     Create a new staff member.
     """
@@ -36,7 +60,7 @@ async def create_staff(request: Request, staff: Staff) -> Staff:
 
 
 @router.patch("/staff/{staff_id}")
-async def update_staff(request: Request, staff_id: str, staff: Staff) -> Staff:
+async def update_staff(request: Request, staff_id: str, staff: Staff) -> UpdateResponse:
     """
     Update a staff member.
     """
@@ -50,7 +74,7 @@ async def update_staff(request: Request, staff_id: str, staff: Staff) -> Staff:
 
 
 @router.delete("/delete/staff/{staff_id}")
-async def delete_staff(request: Request, staff_id: str) -> Staff:
+async def delete_staff(request: Request, staff_id: str) -> UpdateResponse:
     """
     Delete a staff member.
     """
