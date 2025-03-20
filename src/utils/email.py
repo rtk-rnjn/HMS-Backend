@@ -29,7 +29,7 @@ def _send_email(receiver_email: str, subject: str, body: str) -> None:
         server.sendmail(EMAIL, receiver_email, msg.as_string())
         return True
 
-    except Exception:
+    except Exception as e:
         return False
     finally:
         server.quit()

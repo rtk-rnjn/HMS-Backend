@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
-from src import database
+from src.app import app, database
 from src.models import CreateResponse, Staff, UpdateResponse
 from src.utils import send_email
 from type import InsertOneResult
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 __all__ = ("router",)
 
-with open("src/utils/email-body.txt") as file:
+with open("src/utils/email-body-account-created.txt") as file:
     email_body = file.read()
 
 
@@ -55,7 +55,10 @@ async def delete_staff(request: Request, staff_id: str) -> Staff:
     Delete a staff member.
     """
     collection = database["users"]
-    result = await collection.delete_one({"_id": staff_id})
+    result = await collection.update_one({"_id": staff_id}, {"$set": {"active": False}})
     return UpdateResponse(
-        success=result.acknowledged, modified_count=result.deleted_count
+        success=result.acknowledged, modified_count=result.modified_count
     )
+
+
+app.include_router(router)

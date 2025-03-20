@@ -1,0 +1,5 @@
+Hi {0}
+
+Here is your OTP: {1}
+
+Thanks

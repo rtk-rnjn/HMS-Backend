@@ -5,44 +5,16 @@ import hashlib
 import hmac
 import os
 from time import perf_counter
-from typing import Literal
 
 from fastapi import Header, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from src.app import app, mongo_client
+from src.models import PingResponse, RootResponse
 
 __all__ = ("ping", "root")
 
 GITHUB_SECRET = os.environ["GITHUB_WEBHOOK_SECRET"]
-
-
-class PingResponse(BaseModel):
-    success: bool = Field(
-        ...,
-        description="Whether the ping was successful. True if database is reachable, False otherwise.",
-    )
-    ping: Literal["pong"] = Field(
-        "pong",
-        description="The response to the ping request. Should be 'pong' if successful.",
-    )
-    response_time: float = Field(
-        ...,
-        description="The time taken to receive a response from the database in seconds.",
-    )
-
-
-class RootResponse(BaseModel):
-    success: Literal[True] = Field(
-        True,
-        description="Whether the request was successful. Should always be True.",
-        frozen=True,
-    )
-    message: Literal["Welcome to HMS API!"] = Field(
-        "Welcome to HMS API!",
-        description="A welcome message for the API.",
-        frozen=True,
-    )
 
 
 class GitHubPushPayload(BaseModel):

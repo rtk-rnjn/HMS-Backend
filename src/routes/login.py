@@ -56,7 +56,7 @@ async def create_user(request: Request, data: User) -> CreateResponse:
     response_model=User,
     responses={404: {"description": "User not found"}, 422: {}},
 )
-async def fetch_user(request: Request, email_address: EmailStr, password: str) -> User:
+async def fetch_user(request: Request, email_address: str, password: str) -> User:
     """
     Fetch user details using email and password.
     """
