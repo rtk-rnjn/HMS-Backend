@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +31,7 @@ class Admin(User):
 
 class Staff(User):
     first_name: str
-    last_name: str
+    last_name: Optional[str] = None
     contact_number: str
     specializations: List[str]
     department: str
@@ -41,6 +41,7 @@ class Staff(User):
     active: bool = True
 
     role: str = Role.DOCTOR
+    hospital_id: str = ""
 
 
 class Patient(User):
