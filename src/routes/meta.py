@@ -1,32 +1,11 @@
 from __future__ import annotations
 
-import binascii
-import hashlib
-import hmac
-import os
 from time import perf_counter
-
-from fastapi import Header, HTTPException
-from pydantic import BaseModel
 
 from src.app import app, mongo_client
 from src.models import PingResponse, RootResponse
 
 __all__ = ("ping", "root")
-
-GITHUB_SECRET = os.environ["GITHUB_WEBHOOK_SECRET"]
-
-
-class GitHubPushPayload(BaseModel):
-    ref: str
-
-
-def verify_signature(x_hub_signature_256: str = Header(...), body: bytes = b""):
-    digest = hmac.new(GITHUB_SECRET.encode(), body, hashlib.sha256).digest()
-    expected_signature = "sha256=" + binascii.hexlify(digest).decode()
-
-    if not hmac.compare_digest(expected_signature, x_hub_signature_256):
-        raise HTTPException(status_code=403, detail="Invalid signature")
 
 
 @app.get("/ping")

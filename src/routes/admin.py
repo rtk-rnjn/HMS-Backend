@@ -83,7 +83,7 @@ async def update_staff(request: Request, staff_id: str, staff: Staff) -> UpdateR
     )
 
 
-@router.delete("/delete/staff/{staff_id}")
+@router.delete("/staff/{staff_id}")
 async def delete_staff(request: Request, staff_id: str) -> UpdateResponse:
     """
     Delete a staff member.

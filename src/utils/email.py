@@ -1,7 +1,6 @@
-from __future__ import annotations
-
+import asyncio
 import os
-import aiosmtplib
+import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -11,9 +10,9 @@ EMAIL = os.getenv("EMAIL")
 PASSWORD = os.getenv("PASSWORD")
 
 
-async def send_email(receiver_email: str, subject: str, body: str) -> bool:
+def _send_email(receiver_email: str, subject: str, body: str) -> None:
     """
-    Send an email asynchronously to the specified email address.
+    Send an email to the specified email address.
     """
     msg = MIMEMultipart()
     msg["From"] = EMAIL
@@ -22,12 +21,20 @@ async def send_email(receiver_email: str, subject: str, body: str) -> bool:
     msg.attach(MIMEText(body, "plain"))
 
     try:
-        server = aiosmtplib.SMTP(hostname=SMTP_SERVER, port=SMTP_PORT)
-        await server.connect()
-        await server.starttls()
-        await server.login(EMAIL, PASSWORD)
-        await server.send_message(msg)
-        await server.quit()
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL, PASSWORD)
+        server.sendmail(EMAIL, receiver_email, msg.as_string())
         return True
-    except Exception:
+
+    except Exception as e:
         return False
+    finally:
+        server.quit()
+
+
+async def send_email(receiver_email: str, subject: str, body: str) -> bool:
+    """
+    Send an email to the specified email address.
+    """
+    return await asyncio.to_thread(_send_email, receiver_email, subject, body)
