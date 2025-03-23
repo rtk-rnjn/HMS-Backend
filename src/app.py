@@ -4,6 +4,8 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
@@ -27,6 +29,20 @@ app = FastAPI(
         "name": "Mozilla Public License Version 2.0",
         "url": "https://opensource.org/licenses/MPL-2.0",
     },
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add trusted host middleware
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["*"],
 )
 
 from .routes import *  # noqa: E402, F401, F403
