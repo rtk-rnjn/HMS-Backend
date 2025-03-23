@@ -47,10 +47,6 @@ class Access(str, Enum):
     CREATE_HOSPITAL_ADMIN = "create:hospital_admin"
 
 
-ADMIN_ACCESS = [
-    Access.SUPER_ACCESS,
-]
-
 STAFF_ACCESS = [
     Access.CREATE_STAFF,
     Access.READ_STAFF,
@@ -87,4 +83,34 @@ PATIENT_ACCESS = [
     Access.READ_PAYMENT,
     Access.UPDATE_PAYMENT,
     Access.DELETE_PAYMENT,
+]
+
+ADMIN_ACCESS = [
+    Access.SUPER_ACCESS,
+    Access.CREATE_STAFF,
+    Access.READ_STAFF,
+    Access.UPDATE_STAFF,
+    Access.DELETE_STAFF,
+    Access.CREATE_PATIENT,
+    Access.READ_PATIENT,
+    Access.UPDATE_PATIENT,
+    Access.DELETE_PATIENT,
+    Access.CREATE_MEDICAL_RECORD,
+    Access.READ_MEDICAL_RECORD,
+    Access.UPDATE_MEDICAL_RECORD,
+    Access.DELETE_MEDICAL_RECORD,
+    Access.CREATE_APPOINTMENT,
+    Access.READ_APPOINTMENT,
+    Access.UPDATE_APPOINTMENT,
+    Access.DELETE_APPOINTMENT,
+    Access.CREATE_PAYMENT,
+    Access.READ_PAYMENT,
+    Access.UPDATE_PAYMENT,
+    Access.DELETE_PAYMENT,
+    Access.UPDATE_ADMIN,
+    Access.CREATE_HOSPITAL,
+    Access.UPDATE_HOSPITAL,
+    Access.READ_HOSPITAL,
+    Access.DELETE_HOSPITAL,
+    Access.CREATE_HOSPITAL_ADMIN,
 ]

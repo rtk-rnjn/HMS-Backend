@@ -3,11 +3,19 @@ from __future__ import annotations
 import os
 from typing import Union
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import ADMIN_ACCESS, PATIENT_ACCESS, STAFF_ACCESS, Admin, Patient, Staff
+from src.models import (
+    ADMIN_ACCESS,
+    PATIENT_ACCESS,
+    STAFF_ACCESS,
+    Access,
+    Admin,
+    Patient,
+    Staff,
+)
 from src.utils import Authentication
 
 SECRET_KEY = os.environ["SECRET_KEY"]
@@ -35,6 +43,11 @@ class Token(BaseModel):
 class UserLogin(BaseModel):
     email_address: str
     password: str
+
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
 
 
 router = APIRouter(tags=["Login"])
@@ -69,6 +82,49 @@ async def doctor_login(user: UserLogin):
 @router.post("/patient/login", response_model=Token)
 async def patient_login(user: UserLogin):
     return await authenticate_user(user.email_address, user.password, "patient")
+
+
+async def update_password(request: Request, password_change: PasswordChange):
+    collection = database["users"]
+    token = request.headers.get("Authorization").split(" ")[1]
+    current_user = Authentication.get_current_user(token)
+
+    user = await collection.find_one({"email_address": current_user["sub"]})
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user["password"] != password_change.old_password:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    await collection.update_one(
+        {"email_address": current_user["sub"]},
+        {"$set": {"password": password_change.new_password}},
+    )
+    return {"success": True}
+
+
+@router.patch(
+    "/patient/change-password",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_PATIENT))],
+)
+async def change_patient_password(request: Request, password_change: PasswordChange):
+    return await update_password(request, password_change)
+
+
+@router.patch(
+    "/admin/change-password",
+    dependencies=[Depends(Authentication.access_required(Access.SUPER_ACCESS))],
+)
+async def change_admin_password(request: Request, password_change: PasswordChange):
+    return await update_password(request, password_change)
+
+
+@router.patch(
+    "/doctor/change-password",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
+)
+async def change_doctor_password(request: Request, password_change: PasswordChange):
+    return await update_password(request, password_change)
 
 
 app.include_router(router)
