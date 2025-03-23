@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Staff
+from src.models import Access, Staff, Hospital
 from src.utils import Authentication
 
 
@@ -19,12 +19,25 @@ router = APIRouter(tags=["Staff"])
     "/staff/create",
     dependencies=[Depends(Authentication.access_required(Access.CREATE_STAFF))],
 )
-async def create_doctor(request: Request, client_request: ClientRequest):
+async def create_doctor(request: Request, staff: Staff):
     collection = database["users"]
-    assert Staff(**client_request.data)
-    await collection.insert_one(client_request.data)
 
-    return {"success": True}
+    token = request.headers.get("Authorization").split(" ")[1]
+    current_user = Authentication.get_current_user(token)
+
+    hospital = await database["hospitals"].find_one({"admin_id": current_user["_id"]})
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    hospital_obj = Hospital.model_validate(hospital)
+
+    sendable = staff.model_dump(mode="json")
+    sendable["_id"] = sendable["id"]
+    sendable["hospital_id"] = hospital_obj.id
+
+    await collection.insert_one(sendable)
+
+    return Staff.model_validate(sendable)
 
 
 @router.get(
@@ -46,7 +59,18 @@ async def get_doctor(doctor_id: str) -> Staff:
 )
 async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
     collection = database["users"]
-    staff = await collection.find({"role": "doctor"}).to_list(limit)
+    token = request.headers.get("Authorization").split(" ")[1]
+    current_user = Authentication.get_current_user(token)
+
+    hospital = await database["hospitals"].find_one({"admin_id": current_user["_id"]})
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    hospital_obj = Hospital.model_validate(hospital)
+
+    staff = await collection.find(
+        {"role": "doctor", "hospital_id": hospital_obj.id}
+    ).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]
 
 
@@ -74,6 +98,19 @@ async def delete_doctor(doctor_id: str):
     collection = database["users"]
     await collection.delete_one({"_id": doctor_id})
     return {"success": True}
+
+
+@router.get(
+    "/hospital/{admin_id}",
+    dependencies=[Depends(Authentication.access_required(Access.READ_HOSPITAL))],
+)
+async def get_hospital(request: Request, admin_id: str) -> Hospital:
+    collection = database["hospitals"]
+    hospital = await collection.find_one({"admin_id": admin_id})
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    return Hospital.model_validate(hospital)
 
 
 app.include_router(router)

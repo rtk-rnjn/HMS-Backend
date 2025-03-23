@@ -30,12 +30,15 @@ class Admin(UserBase):
 class Staff(UserBase):
     first_name: str
     last_name: Optional[str] = None
+    gender: str = "Other"
     contact_number: str
+    date_of_birth: datetime
     specializations: List[str] = []
     department: str
     on_leave: bool = False
     unavailability_periods: List[UnavailabilityPeriod] = []
     license_id: str
+    year_of_experience: int = 0
     active: bool = True
 
     role: str = Role.STAFF
