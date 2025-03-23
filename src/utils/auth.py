@@ -40,7 +40,6 @@ class Authentication:
     @staticmethod
     def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = Authentication.decode(token)
-
         if not payload:
             raise HTTPException(status_code=401, detail="Invalid token")
         return payload

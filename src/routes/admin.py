@@ -41,10 +41,10 @@ async def get_doctor(doctor_id: str) -> Staff:
 
 
 @router.get(
-    "/staff/{limit}",
+    "/staff",
     dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
 )
-async def get_staff(limit: int = 100) -> list[Staff]:
+async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
     collection = database["users"]
     staff = await collection.find({"role": "doctor"}).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]

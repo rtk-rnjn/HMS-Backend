@@ -70,6 +70,7 @@ STAFF_ACCESS = [
 ]
 
 PATIENT_ACCESS = [
+    Access.READ_STAFF,
     Access.CREATE_PATIENT,
     Access.READ_PATIENT,
     Access.UPDATE_PATIENT,

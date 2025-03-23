@@ -15,7 +15,7 @@ class UnavailabilityPeriod(BaseModel):
 
 class UserBase(BaseModel):
     id: str = Field(..., alias="_id")
-    email_address: EmailStr
+    email_address: str
     password: SecretStr
     role: Role
 
