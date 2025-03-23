@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import os
-import smtplib
-import random
-import time
 import asyncio
-from email.mime.text import MIMEText
+import os
+import random
+import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
-from fastapi import APIRouter, HTTPException, Depends
+from email.mime.text import MIMEText
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from src.app import app
 
 EMAIL = os.environ["EMAIL"]

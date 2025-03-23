@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Staff, Hospital
+from src.models import Access, Hospital, Staff
 from src.utils import Authentication
 
 
