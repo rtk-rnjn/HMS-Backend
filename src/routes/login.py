@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import os
+from typing import Union
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Union
+
 from src.app import app, database
-from src.models import ADMIN_ACCESS, PATIENT_ACCESS, STAFF_ACCESS, Admin, Staff, Patient
+from src.models import ADMIN_ACCESS, PATIENT_ACCESS, STAFF_ACCESS, Admin, Patient, Staff
 from src.utils import Authentication
 
 SECRET_KEY = os.environ["SECRET_KEY"]
@@ -18,10 +19,10 @@ ACCESS_MAP = {
     "patient": PATIENT_ACCESS,
 }
 
-ACCESS_MAP_CLASS: dict[str: BaseModel] = {
+ACCESS_MAP_CLASS: dict[str:BaseModel] = {
     "admin": Admin,
     "doctor": Staff,
-    "patient": Patient
+    "patient": Patient,
 }
 
 
@@ -51,7 +52,7 @@ async def authenticate_user(email_address: str, password: str, role: str | None 
     return Token(
         access_token=Authentication.encode(user, *ACCESS_MAP[user["role"]]),
         token_type="bearer",
-        user=ACCESS_MAP_CLASS[user["role"]].model_validate(user)
+        user=ACCESS_MAP_CLASS[user["role"]].model_validate(user),
     )
 
 

@@ -11,6 +11,7 @@ from src.utils import Authentication
 class ClientRequest(BaseModel):
     data: dict
 
+
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str
@@ -28,6 +29,7 @@ async def create_patient(request: Request, patient: Patient):
     sendable["_id"] = sendable["id"]
     await collection.insert_one(sendable)
     return {"success": True}
+
 
 @router.patch(
     "/patient/change-password",
@@ -48,9 +50,11 @@ async def change_password(request: Request, password_change: PasswordChange):
         raise HTTPException(status_code=401, detail="Invalid password")
 
     await collection.update_one(
-        {"email_address": current_user["sub"]}, {"$set": {"password": password_change.new_password}}
+        {"email_address": current_user["sub"]},
+        {"$set": {"password": password_change.new_password}},
     )
     return {"success": True}
+
 
 @router.get(
     "/patient/{patient_id}",
