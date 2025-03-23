@@ -11,6 +11,10 @@ from src.utils import Authentication
 class ClientRequest(BaseModel):
     data: dict
 
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
 
 router = APIRouter(tags=["Patient"])
 
@@ -18,12 +22,35 @@ router = APIRouter(tags=["Patient"])
 @router.post(
     "/patient/create",
 )
-async def create_patient(request: Request, client_request: ClientRequest):
+async def create_patient(request: Request, patient: Patient):
     collection = database["users"]
-    assert Staff(**client_request.data)
-    await collection.insert_one(client_request.data)
+    sendable = patient.model_dump(mode="json")
+    sendable["_id"] = sendable["id"]
+    await collection.insert_one(sendable)
     return {"success": True}
 
+@router.patch(
+    "/patient/change-password",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_PATIENT))],
+)
+async def change_password(request: Request, password_change: PasswordChange):
+    collection = database["users"]
+
+    token = request.headers.get("Authorization").split(" ")[1]
+    current_user = Authentication.get_current_user(token)
+
+    user = await collection.find_one({"email_address": current_user["sub"]})
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user["password"] != password_change.old_password:
+        raise HTTPException(status_code=401, detail="Invalid password")
+
+    await collection.update_one(
+        {"email_address": current_user["sub"]}, {"$set": {"password": password_change.new_password}}
+    )
+    return {"success": True}
 
 @router.get(
     "/patient/{patient_id}",

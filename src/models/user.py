@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field, SecretStr
+from pydantic import BaseModel, Field
 
 from src.models.enums import BloodGroup, Role
 
@@ -16,7 +16,7 @@ class UnavailabilityPeriod(BaseModel):
 class UserBase(BaseModel):
     id: str = Field(..., alias="_id")
     email_address: str
-    password: SecretStr
+    password: str
     role: Role
 
     class Config:
@@ -46,6 +46,7 @@ class Patient(UserBase):
     first_name: str
     last_name: Optional[str] = None
     date_of_birth: datetime
+    gender: str = "Other"
     blood_group: BloodGroup
     height: int
     weight: int
