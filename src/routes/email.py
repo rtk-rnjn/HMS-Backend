@@ -54,7 +54,7 @@ def sync_send_email(msg, to_email):
         print(f"Sync email sending failed: {e}")
 
 
-@app.post("/email/send")
+@app.get("/email/send")
 async def send_email(to_email: str, subject: str, body: str):
     if await send_smtp_email(to_email, subject, body):
         return {"success": True}
@@ -62,7 +62,7 @@ async def send_email(to_email: str, subject: str, body: str):
         raise HTTPException(status_code=500, detail="Email sending failed")
 
 
-@app.post("/request-otp")
+@app.get("/request-otp")
 async def request_otp(to_email: str):
     otp = random.randint(100000, 999999)
     otp_store[to_email] = (otp, time.time())
@@ -74,7 +74,7 @@ async def request_otp(to_email: str):
         raise HTTPException(status_code=500, detail="Failed to send OTP")
 
 
-@app.post("/verify-otp")
+@app.get("/verify-otp")
 async def verify_otp(to_email: str, otp: int):
     if to_email not in otp_store:
         raise HTTPException(status_code=400, detail="OTP not found or expired")
