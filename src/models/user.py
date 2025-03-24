@@ -41,7 +41,7 @@ class Staff(UserBase):
     license_id: str
     year_of_experience: int = 0
     active: bool = True
-    joining_date: datetime = datetime.now()
+    joining_date: str
     role: str = Role.STAFF
     hospital_id: str = ""
 
