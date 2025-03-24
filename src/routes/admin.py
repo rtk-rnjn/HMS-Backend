@@ -114,7 +114,7 @@ async def update_doctor(
 async def delete_doctor(doctor_id: str):
     collection = database["users"]
     await collection.delete_one({"_id": doctor_id})
-    return {"success": True}
+    return True
 
 
 @router.get(
