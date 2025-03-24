@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
 from src.models import Access, Hospital, Staff
 from src.utils import Authentication
+from src.utils.email import send_smtp_email
+
+with open("src/utils/email-body-account-created.txt", "r") as f:
+    EMAIL_BODY_ACCOUNT_CREATED = f.read()
 
 
 class ClientRequest(BaseModel):
@@ -35,7 +41,16 @@ async def create_doctor(request: Request, staff: Staff):
     sendable["_id"] = sendable["id"]
     sendable["hospital_id"] = hospital_obj.id
 
-    await collection.insert_one(sendable)
+    await asyncio.gather(
+        send_smtp_email(
+            sendable["email_address"],
+            "Account Created",
+            EMAIL_BODY_ACCOUNT_CREATED.format(
+                sendable["email_address"], sendable["password"]
+            ),
+        ),
+        collection.insert_one(sendable),
+    )
 
     return Staff.model_validate(sendable)
 

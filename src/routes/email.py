@@ -11,12 +11,10 @@ from email.mime.text import MIMEText
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.app import app
+from src.utils.email import send_smtp_email
 
 EMAIL = os.environ["EMAIL"]
 PASSWORD = os.environ["PASSWORD"]
-
-with open("src/utils/email-body-account-created.txt", "r") as f:
-    EMAIL_BODY_ACCOUNT_CREATED = f.read()
 
 with open("src/utils/email-body-otp-requested.txt", "r") as f:
     EMAIL_BODY_PASSWORD_RESET = f.read()
@@ -25,33 +23,6 @@ router = APIRouter(tags=["Email"])
 
 otp_store = {}
 OTP_EXPIRY_TIME = 300
-
-
-async def send_smtp_email(to_email: str, subject: str, body: str):
-    try:
-        msg = MIMEMultipart()
-        msg["From"] = EMAIL
-        msg["To"] = to_email
-        msg["Subject"] = subject
-        msg.attach(MIMEText(body, "plain"))
-
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, sync_send_email, msg, to_email)
-        return True
-    except Exception as e:
-        print(f"Email sending failed: {e}")
-        return False
-
-
-def sync_send_email(msg, to_email):
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(EMAIL, PASSWORD)
-        server.sendmail(EMAIL, to_email, msg.as_string())
-        server.quit()
-    except Exception as e:
-        print(f"Sync email sending failed: {e}")
 
 
 @app.get("/email/send")
@@ -69,7 +40,7 @@ async def request_otp(to_email: str):
     email_body = EMAIL_BODY_PASSWORD_RESET.format(to_email, otp)
 
     if await send_smtp_email(to_email, "Your OTP Code", email_body):
-        return {"success": True, "message": "OTP sent successfully"}
+        return {"success": True}
     else:
         raise HTTPException(status_code=500, detail="Failed to send OTP")
 
@@ -86,6 +57,6 @@ async def verify_otp(to_email: str, otp: int):
 
     if stored_otp == otp:
         del otp_store[to_email]
-        return {"success": True, "message": "OTP verified successfully"}
+        return {"success": True}
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP")

@@ -50,6 +50,11 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
+class HardPasswordChange(BaseModel):
+    email_address: str
+    new_password: str
+
+
 router = APIRouter(tags=["Login"])
 
 
@@ -98,6 +103,20 @@ async def update_password(request: Request, password_change: PasswordChange):
 
     await collection.update_one(
         {"email_address": current_user["sub"]},
+        {"$set": {"password": password_change.new_password}},
+    )
+    return {"success": True}
+
+
+@router.patch("/change-password")
+async def change_password(request: Request, password_change: HardPasswordChange):
+    collection = database["users"]
+    user = await collection.find_one({"email_address": password_change.email_address})
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await collection.update_one(
+        {"email_address": password_change.email_address},
         {"$set": {"password": password_change.new_password}},
     )
     return {"success": True}
