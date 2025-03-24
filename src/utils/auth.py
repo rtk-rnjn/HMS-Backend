@@ -18,12 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 class Authentication:
     @staticmethod
     def encode(data: dict, *access: Access) -> str:
-        future_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-            days=1
-        )
-
         encodable = {}
-        encodable["exp"] = future_date
         encodable["access"] = [a.value for a in access]
         encodable["role"] = data["role"]
         encodable["sub"] = str(data["email_address"])
@@ -34,13 +29,16 @@ class Authentication:
     def decode(token: str) -> dict:
         try:
             return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
         except Exception:
+            print("Invalid token")
             return {}
 
     @staticmethod
     def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = Authentication.decode(token)
         if not payload:
+            print("Invalid token")
             raise HTTPException(status_code=401, detail="Invalid token")
         return payload
 

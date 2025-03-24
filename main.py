@@ -21,4 +21,4 @@ PORT = int(os.getenv("PORT", 8080))
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=HOST, port=PORT)
+    uvicorn.run(app, host=HOST, port=PORT, log_level="debug")
