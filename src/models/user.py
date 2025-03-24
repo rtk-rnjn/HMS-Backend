@@ -36,6 +36,7 @@ class Staff(UserBase):
     specializations: List[str] = []
     department: str
     on_leave: bool = False
+    consultation_fee: int = 0
     unavailability_periods: List[UnavailabilityPeriod] = []
     license_id: str
     year_of_experience: int = 0

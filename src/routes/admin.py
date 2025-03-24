@@ -31,7 +31,8 @@ async def create_doctor(request: Request, staff: Staff):
     token = request.headers.get("Authorization").split(" ")[1]
     current_user = Authentication.get_current_user(token)
 
-    hospital = await database["hospitals"].find_one({"admin_id": current_user["_id"]})
+    admin = await collection.find_one({"email_address": current_user["sub"]})
+    hospital = await database["hospitals"].find_one({"admin_id": admin["_id"]})
     if hospital is None:
         raise HTTPException(status_code=404, detail="Hospital not found")
 
