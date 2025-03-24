@@ -90,6 +90,7 @@ async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
     ).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]
 
+
 @router.put(
     "/staff/{doctor_id}",
     dependencies=[
@@ -128,14 +129,16 @@ async def get_hospital(request: Request, admin_id: str) -> Hospital:
 
     return Hospital.model_validate(hospital)
 
+
 @router.get(
     "/staffs",
     dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
 )
 async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
     collection = database["users"]
-    
+
     staff = await collection.find({"role": "doctor"}).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]
+
 
 app.include_router(router)

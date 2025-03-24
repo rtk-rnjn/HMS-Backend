@@ -29,7 +29,7 @@ class Authentication:
     def decode(token: str) -> dict:
         try:
             return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        
+
         except Exception:
             print("Invalid token")
             return {}
