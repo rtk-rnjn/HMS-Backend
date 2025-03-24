@@ -27,7 +27,6 @@ class Authentication:
         encodable["access"] = [a.value for a in access]
         encodable["role"] = data["role"]
         encodable["sub"] = str(data["email_address"])
-        encodable["_id"] = str(data["_id"])
 
         return jwt.encode(encodable, SECRET_KEY, ALGORITHM)
 
