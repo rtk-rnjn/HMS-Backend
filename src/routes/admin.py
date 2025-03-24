@@ -87,7 +87,7 @@ async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
     hospital_obj = Hospital.model_validate(hospital)
 
     staff = await collection.find(
-        {"role": "doctor", "hospital_id": hospital_obj.id}
+        {"role": "doctor", "hospital_id": hospital_obj.id, "active": True}
     ).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]
 
@@ -114,7 +114,7 @@ async def update_doctor(
 )
 async def delete_doctor(doctor_id: str):
     collection = database["users"]
-    await collection.delete_one({"_id": doctor_id})
+    await collection.update_one({"_id": doctor_id}, {"$set": {"active": False}})
     return True
 
 
@@ -138,7 +138,7 @@ async def get_hospital(request: Request, admin_id: str) -> Hospital:
 async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
     collection = database["users"]
 
-    staff = await collection.find({"role": "doctor"}).to_list(limit)
+    staff = await collection.find({"role": "doctor", "active": True}).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]
 
 
