@@ -15,7 +15,7 @@ class Hospital(BaseModel):
     specializations: List[str] = []
     admin_id: str
     announcements: List[Announcement] = []
-    hospital_licence_number: str
+    hospital_licence_number: str = ""
 
 
 class Announcement(BaseModel):
