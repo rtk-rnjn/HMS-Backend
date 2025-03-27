@@ -56,8 +56,5 @@ class Patient(UserBase):
     weight: int
     allergies: List[str] = []
     medications: List[str] = []
-    emergency_contact_name: str
-    emergency_contact_number: str
-    emergency_contact_relationship: str
     active: bool = True
     role: str = Role.PATIENT

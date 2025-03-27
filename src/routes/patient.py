@@ -23,7 +23,7 @@ async def create_patient(request: Request, patient: Patient):
     sendable = patient.model_dump(mode="json")
     sendable["_id"] = sendable["id"]
 
-    user = await collection.find_one({"email_address": sendable["email_address"]})
+    user = await collection.find_one({"email_address": sendable["email_address"], "role": "patient"})
     if user is not None:
         raise HTTPException(status_code=400, detail="User already exists")
 
