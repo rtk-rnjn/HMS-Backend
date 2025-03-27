@@ -8,11 +8,6 @@ from pydantic import BaseModel, Field
 from src.models.enums import BloodGroup, Role
 
 
-class UnavailabilityPeriod(BaseModel):
-    start_time: datetime
-    end_time: datetime
-
-
 class UserBase(BaseModel):
     id: str = Field(..., alias="_id")
     email_address: str
@@ -37,7 +32,7 @@ class Staff(UserBase):
     department: str
     on_leave: bool = False
     consultation_fee: int = 0
-    unavailability_periods: List[UnavailabilityPeriod] = []
+    unavailability_periods: List[datetime] = []
     license_id: str
     year_of_experience: int = 0
     active: bool = True

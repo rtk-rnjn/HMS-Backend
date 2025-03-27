@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
+from typing import List, Literal, Union
 
 from pydantic import BaseModel, Field
+
+from src.models import Role
 
 
 class Hospital(BaseModel):
@@ -22,3 +24,5 @@ class Announcement(BaseModel):
     title: str
     body: str
     created_at: datetime
+    broadcast_to: List[Role] = []
+    category: str
