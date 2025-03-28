@@ -25,4 +25,4 @@ class Announcement(BaseModel):
     body: str
     created_at: datetime
     broadcast_to: List[Role] = []
-    category: str
+    category: str = "General"

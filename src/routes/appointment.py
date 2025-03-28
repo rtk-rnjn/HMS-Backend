@@ -4,7 +4,7 @@ import asyncio
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
@@ -72,3 +72,14 @@ async def update_appointment(appointment_id: str, appointment: Appointment):
         {"_id": appointment_id}, {"$set": appointment.model_dump(mode="json")}
     )
     return {"success": True}
+
+
+@router.websocket("/appointment/{appointment_id}/live")
+async def live_appointment(appointment_id: str, websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        appointment = await database["appointments"].find_one({"_id": appointment_id})
+        if not appointment:
+            raise HTTPException(status_code=404, detail="Appointment not found")
+        await websocket.send_json(Appointment.model_validate(appointment))
+        await asyncio.sleep(5)

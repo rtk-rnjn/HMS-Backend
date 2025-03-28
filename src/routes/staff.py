@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Hospital, Staff
+from src.models import Access, Announcement, Hospital, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -31,7 +31,9 @@ async def create_doctor(request: Request, staff: Staff):
     token = request.headers.get("Authorization").split(" ")[1]
     current_user = Authentication.get_current_user(token)
 
-    user = await collection.find_one({"email_address": staff.email_address})
+    user = await collection.find_one(
+        {"email_address": staff.email_address, "role": "doctor"}
+    )
     if user is not None:
         raise HTTPException(status_code=400, detail="User already exists")
 
@@ -133,6 +135,49 @@ async def get_hospital(request: Request, admin_id: str) -> Hospital:
         raise HTTPException(status_code=404, detail="Hospital not found")
 
     return Hospital.model_validate(hospital)
+
+
+@router.post(
+    "/hospital/{admin_id}/create-announcement",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_HOSPITAL))],
+)
+async def create_announcement(request: Request, admin_id: str, announcement: dict):
+    announcement = Announcement(**announcement)
+    collection = database["hospitals"]
+    hospital = await collection.find_one({"admin_id": admin_id})
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    announcement_data = announcement.model_dump(mode="json")
+    await collection.update_one(
+        {"admin_id": admin_id},
+        {"$addToSet": {"announcements": announcement_data}},
+    )
+    return {"success": True}
+
+
+@router.get(
+    "/hospital/{admin_id}/announcements",
+    dependencies=[Depends(Authentication.access_required(Access.READ_HOSPITAL))],
+)
+async def get_announcement(request: Request, admin_id: str) -> list[Announcement]:
+    collection = database["hospitals"]
+    hospital = await collection.find_one({"admin_id": admin_id})
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    hospital_obj = Hospital.model_validate(hospital)
+    return hospital_obj.announcements
+
+
+@router.websocket("/hospital/announcement")
+async def announcement_websocket(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        async for announcement in database["hospitals"].watch(
+            [{"$match": {"operationType": "update"}}]
+        ):
+            await websocket.send_json(announcement)
 
 
 @router.get(
