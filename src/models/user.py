@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -28,7 +28,7 @@ class Staff(UserBase):
     gender: str = "Other"
     contact_number: str
     date_of_birth: datetime
-    specializations: List[str] = []
+    specialization: str
     department: str
     on_leave: bool = False
     consultation_fee: int = 0
@@ -39,6 +39,7 @@ class Staff(UserBase):
     joining_date: str
     role: str = Role.STAFF
     hospital_id: str = ""
+    shifts: List[Tuple[datetime, datetime]] = []
 
 
 class Patient(UserBase):

@@ -19,34 +19,42 @@ router = APIRouter(tags=["Appointment"])
     "/appointment/create",
     dependencies=[Depends(Authentication.access_required(Access.CREATE_APPOINTMENT))],
 )
-async def create_appointment(request: Request, appointment: Appointment):
-    doctor_id = appointment.doctor_id
-    doctor_data = await database["staff"].find_one({"_id": doctor_id})
-    if not doctor_data:
-        raise HTTPException(status_code=404, detail="Doctor not found")
+async def create_appointment(request: Request, appointment: dict):
+    appointment = Appointment(**appointment)
+    appointment_collection = database["appointments"]
 
-    doctor = Staff(**doctor_data)
-    unavailability_periods = doctor.unavailability_periods
-    start_date = datetime.fromisoformat(appointment.start_date)
-    end_date = datetime.fromisoformat(appointment.end_date)
+    async for appointment_data in appointment_collection.find(
+        {"doctor_id": appointment.doctor_id}
+    ):
+        temp_appointment = Appointment(**appointment_data)
 
-    for period in unavailability_periods:
-        if start_date < period < end_date:
+        temp_end_date = datetime.fromisoformat(temp_appointment.end_date)
+        temp_start_date = datetime.fromisoformat(temp_appointment.start_date)
+
+        start_date = datetime.fromisoformat(appointment.start_date)
+        end_date = datetime.fromisoformat(appointment.end_date)
+
+        if start_date < temp_end_date and end_date > temp_start_date:
             raise HTTPException(
-                status_code=400, detail="Doctor is unavailable at this time"
+                status_code=400, detail="Doctor is already booked for this time"
             )
 
-    appointment_data = await database["appointments"].find_one(
-        {"doctor_id": doctor_id, "start_date": appointment.start_date}
-    )
-    if appointment_data:
-        raise HTTPException(
-            status_code=400, detail="Doctor is already booked at this time"
-        )
+    doctor = await database["users"].find_one({"_id": appointment.doctor_id})
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
 
-    appointment = appointment.model_dump(mode="json")
-    await database["appointments"].insert_one(appointment)
-    return {"success": True}
+    patient = await database["users"].find_one({"_id": appointment.patient_id})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    appointment_data = appointment.model_dump(mode="json")
+    appointment_data["_id"] = appointment_data["id"]
+    appointment_data["doctor_id"] = doctor["id"]
+    appointment_data["patient_id"] = patient["id"]
+    appointment_data["status"] = "pending"
+    appointment_data["created_at"] = datetime.now().isoformat()
+
+    await appointment_collection.insert_one(appointment_data)
 
 
 @router.get(
@@ -74,6 +82,30 @@ async def update_appointment(appointment_id: str, appointment: Appointment):
     return {"success": True}
 
 
+@router.get(
+    "/appointments/{doctor_id_or_patient_id}",
+    dependencies=[Depends(Authentication.access_required(Access.READ_APPOINTMENT))],
+)
+async def get_appointments(doctor_id_or_patient_id: str, completed: bool = False):
+    appointments = (
+        await database["appointments"]
+        .find(
+            {
+                "$or": [
+                    {"doctor_id": doctor_id_or_patient_id},
+                    {"patient_id": doctor_id_or_patient_id},
+                ]
+            }
+        )
+        .to_list(length=100)
+    )
+
+    if not appointments:
+        raise HTTPException(status_code=404, detail="No appointments found")
+
+    return [Appointment.model_validate(appointment) for appointment in appointments]
+
+
 @router.websocket("/appointment/{appointment_id}/live")
 async def live_appointment(appointment_id: str, websocket: WebSocket):
     await websocket.accept()
@@ -83,3 +115,6 @@ async def live_appointment(appointment_id: str, websocket: WebSocket):
             raise HTTPException(status_code=404, detail="Appointment not found")
         await websocket.send_json(Appointment.model_validate(appointment))
         await asyncio.sleep(5)
+
+
+app.include_router(router)

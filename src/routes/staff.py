@@ -156,6 +156,19 @@ async def create_announcement(request: Request, admin_id: str, announcement: dic
     return {"success": True}
 
 
+@router.post(
+    "/hospital",
+    dependencies=[Depends(Authentication.access_required(Access.CREATE_HOSPITAL))],
+)
+async def create_hospital(hospital: Hospital):
+    collection = database["hospitals"]
+    sendable_data = hospital.model_dump(mode="json")
+    sendable_data["_id"] = hospital.id
+
+    hospital = await collection.insert_one(sendable_data)
+    return {"success": True}
+
+
 @router.get(
     "/hospital/{admin_id}/announcements",
     dependencies=[Depends(Authentication.access_required(Access.READ_HOSPITAL))],
@@ -170,16 +183,6 @@ async def get_announcement(request: Request, admin_id: str) -> list[Announcement
     return hospital_obj.announcements
 
 
-@router.websocket("/hospital/announcement")
-async def announcement_websocket(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        async for announcement in database["hospitals"].watch(
-            [{"$match": {"operationType": "update"}}]
-        ):
-            await websocket.send_json(announcement)
-
-
 @router.get(
     "/staffs",
     dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
@@ -189,6 +192,17 @@ async def get_staff(request: Request, limit: int = 100) -> list[Staff]:
 
     staff = await collection.find({"role": "doctor", "active": True}).to_list(limit)
     return [Staff.model_validate(doctor) for doctor in staff]
+
+
+@router.get(
+    "/specializations",
+    dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
+)
+async def get_specializations(request: Request) -> list[str]:
+    collection = database["users"]
+
+    staff = await collection.find({"role": "doctor", "active": True}).to_list(100)
+    return list(set([doctor["specialization"] for doctor in staff]))
 
 
 app.include_router(router)

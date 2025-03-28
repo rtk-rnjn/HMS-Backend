@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
+
+
+class AppointmentStatus(str, Enum):
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
 
 
 class Appointment(BaseModel):
@@ -11,7 +18,7 @@ class Appointment(BaseModel):
     doctor_id: str
     start_date: str
     end_date: str
-    status: str
+    status: AppointmentStatus
     prescription: str = ""
     notes: str = ""
     reference: Optional[str] = None
