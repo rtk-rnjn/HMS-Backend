@@ -19,8 +19,8 @@ router = APIRouter(tags=["Appointment"])
     "/appointment/create",
     dependencies=[Depends(Authentication.access_required(Access.CREATE_APPOINTMENT))],
 )
-async def create_appointment(request: Request, appointment: dict):
-    appointment = Appointment(**appointment)
+async def create_appointment(request: Request, appointment: Appointment):
+    # appointment = Appointment(**appointment)
     appointment_collection = database["appointments"]
 
     async for appointment_data in appointment_collection.find(
@@ -28,11 +28,18 @@ async def create_appointment(request: Request, appointment: dict):
     ):
         temp_appointment = Appointment(**appointment_data)
 
-        temp_end_date = datetime.fromisoformat(temp_appointment.end_date)
-        temp_start_date = datetime.fromisoformat(temp_appointment.start_date)
+        # Sample DateTime: 2025-04-02T06:30:00Z
+        # Convert to datetime objects
+        date_format = "%Y-%m-%dT%H:%M:%SZ"
+        temp_end_date = datetime.strptime(
+            temp_appointment.end_date, date_format
+        )
+        temp_start_date = datetime.strptime(
+            temp_appointment.start_date, date_format
+        )
 
-        start_date = datetime.fromisoformat(appointment.start_date)
-        end_date = datetime.fromisoformat(appointment.end_date)
+        start_date = datetime.strptime(appointment.start_date, date_format)
+        end_date = datetime.strptime(appointment.end_date, date_format)
 
         if start_date < temp_end_date and end_date > temp_start_date:
             raise HTTPException(
@@ -53,6 +60,8 @@ async def create_appointment(request: Request, appointment: dict):
     appointment_data["patient_id"] = patient["id"]
 
     await appointment_collection.insert_one(appointment_data)
+
+    return {"success": True}
 
 
 @router.get(
