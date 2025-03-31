@@ -46,6 +46,9 @@ class Access(str, Enum):
     DELETE_HOSPITAL = "delete:hospital"
     CREATE_HOSPITAL_ADMIN = "create:hospital_admin"
 
+    READ_ANNOUNCEMENT = "read:announcement"
+    CREATE_ANNOUNCEMENT = "create:announcement"
+
 
 STAFF_ACCESS = [
     Access.CREATE_STAFF,
@@ -63,6 +66,7 @@ STAFF_ACCESS = [
     Access.READ_PAYMENT,
     Access.UPDATE_PAYMENT,
     Access.DELETE_PAYMENT,
+    Access.READ_ANNOUNCEMENT,
 ]
 
 PATIENT_ACCESS = [
@@ -83,6 +87,7 @@ PATIENT_ACCESS = [
     Access.READ_PAYMENT,
     Access.UPDATE_PAYMENT,
     Access.DELETE_PAYMENT,
+    Access.READ_ANNOUNCEMENT
 ]
 
 ADMIN_ACCESS = [
@@ -113,4 +118,5 @@ ADMIN_ACCESS = [
     Access.READ_HOSPITAL,
     Access.DELETE_HOSPITAL,
     Access.CREATE_HOSPITAL_ADMIN,
+    Access.READ_ANNOUNCEMENT,
 ]

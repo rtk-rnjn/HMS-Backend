@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Announcement, Hospital, Staff
+from src.models import Access, Announcement, Hospital, Staff, Role
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -173,7 +173,7 @@ async def create_hospital(hospital: Hospital):
     "/hospital/{admin_id}/announcements",
     dependencies=[Depends(Authentication.access_required(Access.READ_HOSPITAL))],
 )
-async def get_announcement(request: Request, admin_id: str) -> list[Announcement]:
+async def get_announcements(request: Request, admin_id: str) -> list[Announcement]:
     collection = database["hospitals"]
     hospital = await collection.find_one({"admin_id": admin_id})
     if hospital is None:
@@ -181,6 +181,21 @@ async def get_announcement(request: Request, admin_id: str) -> list[Announcement
 
     hospital_obj = Hospital.model_validate(hospital)
     return hospital_obj.announcements
+
+@router.get(
+    "/hospital/{hospital_id}/doctors/announcements",
+    dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
+)
+async def get_announcements_for_doctor(
+    request: Request, hospital_id: str
+) -> list[Announcement]:
+    collection = database["hospitals"]
+    hospital = await collection.find_one({"_id": hospital_id})
+    if hospital is None:
+        raise HTTPException(status_code=404, detail="Hospital not found")
+
+    hospital_obj = Hospital.model_validate(hospital)
+    return [announcement for announcement in hospital_obj.announcements if Role.STAFF in announcement.broadcast_to]
 
 
 @router.get(
