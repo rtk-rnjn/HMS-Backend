@@ -51,8 +51,6 @@ async def create_appointment(request: Request, appointment: dict):
     appointment_data["_id"] = appointment_data["id"]
     appointment_data["doctor_id"] = doctor["id"]
     appointment_data["patient_id"] = patient["id"]
-    appointment_data["status"] = "pending"
-    appointment_data["created_at"] = datetime.now().isoformat()
 
     await appointment_collection.insert_one(appointment_data)
 
@@ -99,6 +97,7 @@ async def get_appointments(doctor_id_or_patient_id: str, completed: bool = False
         )
         .to_list(length=100)
     )
+    print(appointments)
 
     if not appointments:
         raise HTTPException(status_code=404, detail="No appointments found")

@@ -7,9 +7,9 @@ from pydantic import BaseModel, Field
 
 
 class AppointmentStatus(str, Enum):
-    CONFIRMED = "confirmed"
-    CANCELLED = "cancelled"
-    COMPLETED = "completed"
+    CONFIRMED = "Confirmed"
+    CANCELLED = "Cancelled"
+    COMPLETED = "Completed"
 
 
 class Appointment(BaseModel):
