@@ -63,6 +63,8 @@ STAFF_ACCESS = [
     Access.READ_PAYMENT,
     Access.UPDATE_PAYMENT,
     Access.DELETE_PAYMENT,
+    Access.READ_PATIENT,
+    Access.UPDATE_PATIENT
 ]
 
 PATIENT_ACCESS = [
