@@ -102,7 +102,6 @@ async def get_appointments(doctor_id_or_patient_id: str, completed: bool = False
         )
         .to_list(length=100)
     )
-    print(appointments)
 
     if not appointments:
         raise HTTPException(status_code=404, detail="No appointments found")

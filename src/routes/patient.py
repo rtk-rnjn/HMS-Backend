@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Patient, Staff
+from src.models import Access, Announcement, Patient, Staff
 from src.utils import Authentication
+import uuid
 
 
 class ClientRequest(BaseModel):
@@ -78,7 +79,7 @@ async def delete_patient(patient_id: str):
 )
 async def create_prescription(patient_id: str, data: dict):
     collection = database["prescriptions"]
-    data["_id"] = data["id"]
+    data["_id"] = data.get("id", str(uuid.uuid4()))
     data["patient_id"] = patient_id
 
     await collection.insert_one(data)
@@ -110,6 +111,45 @@ async def update_prescription(patient_id: str, data: dict):
     collection = database["prescriptions"]
     await collection.update_one({"patient_id": patient_id}, {"$set": data})
     return {"success": True}
+
+
+@router.get(
+    "/patient/{patient_id}/announcements/",
+    dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
+)
+async def get_announcement(patient_id: str):
+    collection = database["hospitals"]
+    announcements = collection.find(
+        {"announcements.broadcast_to": "patient"}, {"announcements.$": 1}
+    ).to_list(length=100)
+    return [Announcement.model_validate(announcement) for announcement in announcements]
+
+
+@router.post(
+    "/patient/{patient_id}/medical-report",
+    dependencies=[
+        Depends(Authentication.access_required(Access.CREATE_MEDICAL_RECORD))
+    ],
+)
+async def create_medical_report(patient_id: str, data: dict):
+    collection = database["medical_reports"]
+    data["_id"] = data.get("id", str(uuid.uuid4()))
+    data["patient_id"] = patient_id
+
+    await collection.insert_one(data)
+    return {"success": True}
+
+
+@router.get(
+    "/patient/{patient_id}/medical-reports",
+    dependencies=[Depends(Authentication.access_required(Access.READ_MEDICAL_RECORD))],
+)
+async def get_medical_report(patient_id: str):
+    collection = database["medical_reports"]
+    medical_reports = await collection.find({"patient_id": patient_id}).to_list(
+        length=100
+    )
+    return [dict(medical_report) for medical_report in medical_reports]
 
 
 app.include_router(router)
