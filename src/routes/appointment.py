@@ -31,12 +31,8 @@ async def create_appointment(request: Request, appointment: Appointment):
         # Sample DateTime: 2025-04-02T06:30:00Z
         # Convert to datetime objects
         date_format = "%Y-%m-%dT%H:%M:%SZ"
-        temp_end_date = datetime.strptime(
-            temp_appointment.end_date, date_format
-        )
-        temp_start_date = datetime.strptime(
-            temp_appointment.start_date, date_format
-        )
+        temp_end_date = datetime.strptime(temp_appointment.end_date, date_format)
+        temp_start_date = datetime.strptime(temp_appointment.start_date, date_format)
 
         start_date = datetime.strptime(appointment.start_date, date_format)
         end_date = datetime.strptime(appointment.end_date, date_format)

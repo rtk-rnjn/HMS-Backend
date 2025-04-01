@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Announcement, Hospital, Staff, Role
+from src.models import Access, Announcement, Hospital, Role, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -182,6 +182,7 @@ async def get_announcements(request: Request, admin_id: str) -> list[Announcemen
     hospital_obj = Hospital.model_validate(hospital)
     return hospital_obj.announcements
 
+
 @router.get(
     "/hospital/{hospital_id}/doctors/announcements",
     dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
@@ -195,7 +196,11 @@ async def get_announcements_for_doctor(
         raise HTTPException(status_code=404, detail="Hospital not found")
 
     hospital_obj = Hospital.model_validate(hospital)
-    return [announcement for announcement in hospital_obj.announcements if Role.STAFF in announcement.broadcast_to]
+    return [
+        announcement
+        for announcement in hospital_obj.announcements
+        if Role.STAFF in announcement.broadcast_to
+    ]
 
 
 @router.get(
