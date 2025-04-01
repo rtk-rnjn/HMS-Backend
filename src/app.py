@@ -18,6 +18,9 @@ if URI is None:
 mongo_client = AsyncIOMotorClient(URI, document_class=dict)
 database = mongo_client["HMS"]
 
+RAZORPAY_KEY = os.getenv("RAZORPAY_KEY")
+RAZORPAY_SECRET = os.getenv("RAZORPAY_SECRET")
+
 app = FastAPI(
     title="HMS API Documentation",
     version="0.1",
