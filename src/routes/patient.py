@@ -70,4 +70,37 @@ async def delete_patient(patient_id: str):
     return {"success": True}
 
 
+@router.post(
+    "/patient/{patient_id}/prescription",
+    dependencies=[Depends(Authentication.access_required(Access.CREATE_MEDICAL_RECORD))],
+)
+async def create_prescription(patient_id: str, data: dict):
+    collection = database["prescriptions"]
+    data["_id"] = data["id"]
+    data["patient_id"] = patient_id
+
+    await collection.insert_one(data)
+
+    return {"success": True}
+
+@router.get(
+    "/patient/{patient_id}/prescription",
+    dependencies=[Depends(Authentication.access_required(Access.READ_MEDICAL_RECORD))],
+)
+async def get_prescription(patient_id: str):
+    collection = database["prescriptions"]
+    prescriptions = await collection.find({"patient_id": patient_id}).to_list(length=100)
+    if prescriptions is None:
+        raise HTTPException(status_code=404, detail="Prescription not found")
+    return prescriptions
+
+@router.put(
+    "/patient/{patient_id}/prescription",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_MEDICAL_RECORD))],
+)
+async def update_prescription(patient_id: str, data: dict):
+    collection = database["prescriptions"]
+    await collection.update_one({"patient_id": patient_id}, {"$set": data})
+    return {"success": True}
+
 app.include_router(router)
