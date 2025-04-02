@@ -6,9 +6,9 @@ from .access import ADMIN_ACCESS, PATIENT_ACCESS, STAFF_ACCESS
 
 
 class Role(str, Enum):
-    ADMIN = "admin"
-    STAFF = "doctor"
-    PATIENT = "patient"
+    ADMIN = "Admin"
+    STAFF = "Doctor"
+    PATIENT = "Patient"
 
     @staticmethod
     def get_access(role: Role) -> list[str]:

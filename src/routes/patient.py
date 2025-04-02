@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Announcement, Patient, Staff
+from src.models import Access, Announcement, Patient, Review
 from src.utils import Authentication
 import uuid
 
@@ -150,6 +150,38 @@ async def get_medical_report(patient_id: str):
         length=100
     )
     return [dict(medical_report) for medical_report in medical_reports]
+
+@router.post(
+    "/reviews/{doctor_id}/create"
+)
+async def create_review(doctor_id: str, review: Review):
+    collection = database["reviews"]
+    sendable = review.model_dump(mode="json")
+    sendable["_id"] = sendable["id"]
+
+    await collection.insert_one(sendable)
+
+    return {"success": True}
+
+@router.get(
+    "/reviews/{doctor_id_or_patient_id}",
+    dependencies=[
+        Depends(Authentication.access_required(Access.READ_STAFF)),
+        Depends(Authentication.access_required(Access.READ_PATIENT)),
+    ],
+)
+async def fetch_reviews(doctor_id_or_patient_id: str):
+    collection = database["reviews"]
+    reviews = await collection.find(
+        {
+            "$or": [
+                {"doctor_id": doctor_id_or_patient_id},
+                {"patient_id": doctor_id_or_patient_id},
+            ]
+        }
+    )
+
+    return [Review.model_validate(review) for review in reviews]
 
 
 app.include_router(router)
