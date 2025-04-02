@@ -21,6 +21,9 @@ class UserBase(BaseModel):
 class Admin(UserBase):
     role: str = Role.ADMIN
 
+class WorkingHours(BaseModel):
+    start_time: str
+    end_time: str
 
 class Staff(UserBase):
     first_name: str
@@ -32,14 +35,13 @@ class Staff(UserBase):
     department: str
     on_leave: bool = False
     consultation_fee: int = 0
-    unavailability_periods: List[datetime] = []
     license_id: str
     year_of_experience: int = 0
     active: bool = True
     joining_date: str
     role: str = Role.STAFF
     hospital_id: str = ""
-    shifts: List[Tuple[datetime, datetime]] = []
+    working_hours: Optional[WorkingHours] = None
 
 
 class Patient(UserBase):

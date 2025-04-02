@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Appointment, Hospital, Staff
+from src.models import Access, Appointment, Patient, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -59,7 +59,6 @@ async def create_appointment(request: Request, appointment: Appointment):
 
     return {"success": True}
 
-
 @router.get(
     "/appointment/{appointment_id}",
     dependencies=[Depends(Authentication.access_required(Access.READ_APPOINTMENT))],
@@ -108,16 +107,32 @@ async def get_appointments(doctor_id_or_patient_id: str, completed: bool = False
 
     return [Appointment.model_validate(appointment) for appointment in appointments]
 
+@router.delete(
+    "/appointment/{appointment_id}/cancel",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_APPOINTMENT))],
+)
+async def cancel_appointment(appointment_id: str):
+    appointment = await database["appointments"].find_one({"_id": appointment_id})
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
 
-@router.websocket("/appointment/{appointment_id}/live")
-async def live_appointment(appointment_id: str, websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        appointment = await database["appointments"].find_one({"_id": appointment_id})
-        if not appointment:
-            raise HTTPException(status_code=404, detail="Appointment not found")
-        await websocket.send_json(Appointment.model_validate(appointment))
-        await asyncio.sleep(5)
+    await database["appointments"].update_one(
+        {"_id": appointment_id}, {"$set": {"cancelled": True}}
+    )
+
+    patient_data = await database["users"].find_one({"_id": appointment["patient_id"]})
+    staff_data = await database["users"].find_one({"_id": appointment["doctor_id"]})
+    staff = Staff(**staff_data)
+    patient = Patient(**patient_data)
+
+    if patient:
+        send_smtp_email(
+            subject="Appointment Cancelled",
+            body=f"Your appointment with {staff.first_name} {staff.last_name} has been cancelled.",
+            to=patient.email_address,
+        )
+
+    return {"success": True}
 
 
 app.include_router(router)

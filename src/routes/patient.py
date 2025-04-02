@@ -115,7 +115,7 @@ async def update_prescription(patient_id: str, data: dict):
 
 
 @router.get(
-    "/patient/{patient_id}/announcements/",
+    "/patient/{patient_id}/announcements",
     dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
 )
 async def get_announcement(patient_id: str):

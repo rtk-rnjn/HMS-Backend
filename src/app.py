@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import os
 
 from dotenv import load_dotenv
@@ -7,6 +9,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+
+if TYPE_CHECKING:
+    from type import Client
+else:
+    from razorpay import Client as Client
+
 
 load_dotenv()
 
@@ -20,6 +28,10 @@ database = mongo_client["HMS"]
 
 RAZORPAY_KEY = os.getenv("RAZORPAY_KEY")
 RAZORPAY_SECRET = os.getenv("RAZORPAY_SECRET")
+
+razorpay_client = Client(auth=(RAZORPAY_KEY, RAZORPAY_SECRET))
+razorpay_client.set_app_details({"title" : "Hospital Management System", "version" : "Initial 0.1"})
+
 
 app = FastAPI(
     title="HMS API Documentation",

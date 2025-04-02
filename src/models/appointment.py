@@ -10,6 +10,7 @@ class AppointmentStatus(str, Enum):
     CONFIRMED = "Confirmed"
     CANCELLED = "Cancelled"
     COMPLETED = "Completed"
+    ON_GOUNG = "On Going"
 
 
 class Appointment(BaseModel):
@@ -23,3 +24,5 @@ class Appointment(BaseModel):
     notes: str = ""
     reference: Optional[str] = None
     created_at: str
+    cancelled: bool = False
+    paid: bool = False
