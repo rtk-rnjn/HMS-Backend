@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Announcement, Hospital, Role, Staff, Review
+from src.models import Access, Announcement, Hospital, Review, Role, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -224,6 +224,7 @@ async def get_specializations(request: Request) -> list[str]:
     staff = await collection.find({"role": "doctor", "active": True}).to_list(100)
     return list(set([doctor["specialization"] for doctor in staff]))
 
+
 @router.get(
     "/staff/{doctor_id}/average-rating",
     dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
@@ -238,5 +239,6 @@ async def staff_average_rating(doctor_id: str):
     rating = sum(review.stars for review in reviews) / len(reviews)
 
     return {"rating": rating}
+
 
 app.include_router(router)

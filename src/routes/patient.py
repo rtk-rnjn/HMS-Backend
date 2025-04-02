@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.app import app, database
 from src.models import Access, Announcement, Patient, Review
 from src.utils import Authentication
-import uuid
 
 
 class ClientRequest(BaseModel):
@@ -151,9 +152,8 @@ async def get_medical_report(patient_id: str):
     )
     return [dict(medical_report) for medical_report in medical_reports]
 
-@router.post(
-    "/reviews/{doctor_id}/create"
-)
+
+@router.post("/reviews/{doctor_id}/create")
 async def create_review(doctor_id: str, review: Review):
     collection = database["reviews"]
     sendable = review.model_dump(mode="json")
@@ -162,6 +162,7 @@ async def create_review(doctor_id: str, review: Review):
     await collection.insert_one(sendable)
 
     return {"success": True}
+
 
 @router.get(
     "/reviews/{doctor_id_or_patient_id}",
