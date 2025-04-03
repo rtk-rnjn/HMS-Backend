@@ -120,10 +120,10 @@ async def update_prescription(patient_id: str, data: dict):
 )
 async def get_announcements(patient_id: str):
     collection = database["hospitals"]
-    hospitals = collection.find()
+    hospitals = await collection.find().to_list(100)
 
     announcements = []
-    async for hospital in hospitals:
+    for hospital in hospitals:
         for announcement in hospital["announcements"]:
             if "patient" in annotations["broadcast_to"]:
                 announcements.append(announcement)
