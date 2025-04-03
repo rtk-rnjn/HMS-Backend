@@ -38,6 +38,22 @@ async def search_doctor_by_specialization(query: str):
 
     return [Staff(**data) for data in staffs_data]
 
+@router.get(
+    "/search/doctors/department",
+    dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
+)
+async def search_doctor_by_department(query: str):
+    collection = database["users"]
+    staffs_data = await collection.find(
+        {
+            "role": "doctor",
+            "active": True,
+            "department": {"$regex": query, "$options": "i"},
+        }
+    ).to_list(length=100)
+
+    return [Staff(**data) for data in staffs_data]
+
 
 @router.get(
     "/search/doctors/symptoms",
