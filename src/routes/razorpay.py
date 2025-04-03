@@ -9,7 +9,8 @@ from src.models import Appointment, Patient, Staff
 router = APIRouter(tags=["Razorpay"], prefix="/razorpay-gateway")
 from fastapi.responses import JSONResponse
 
-cache: dict[str, Appointment] = {}
+class Cache:
+    cache: dict[str, Appointment] = {}
 
 
 @router.post("/create-order-appointment")
@@ -41,7 +42,7 @@ async def rpay_order_appointment(appointment: Appointment):
     await database["appointments"].update_one(
         {"id": appointment.id}, {"$set": {"razorpay_order_data": order_data}}
     )
-    cache[order_data["id"]] = appointment
+    Cache.cache[order_data["id"]] = appointment
     return order_data
 
 
@@ -54,7 +55,7 @@ async def verify_payment(
 ):
     payload = razorpay_client.payment_link.fetch(razorpay_payment_link_id)
 
-    sendable = cache[razorpay_payment_link_id].model_dump(mode="json")
+    sendable = Cache.cache[razorpay_payment_link_id].model_dump(mode="json")
     sendable["_id"] = sendable["id"]
     sendable["razorpay_payment_id"] = razorpay_payment_link_id
     await database["appointments"].insert_one(sendable)

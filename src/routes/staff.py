@@ -315,10 +315,10 @@ async def staff_average_rating(doctor_id: str):
     collection = database["reviews"]
     reviews_data = await collection.find(
         {"doctor_id": doctor_id},
-    )
+    ).to_list(100)
 
-    reviews = [Review.model_validate(review) async for review in reviews_data]
-    rating = sum(review.stars for review in reviews) / len(reviews)
+    reviews = [Review.model_validate(review) for review in reviews_data]
+    rating = sum(review.stars for review in reviews) / max(len(reviews), 1)
 
     return {"rating": rating}
 

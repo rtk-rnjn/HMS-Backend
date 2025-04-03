@@ -98,9 +98,6 @@ async def update_password(request: Request, password_change: PasswordChange):
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user["password"] != password_change.old_password:
-        raise HTTPException(status_code=401, detail="Invalid password")
-
     await collection.update_one(
         {"email_address": current_user["sub"]},
         {"$set": {"password": password_change.new_password}},
@@ -124,7 +121,6 @@ async def change_password(request: Request, password_change: HardPasswordChange)
 
 @router.patch(
     "/patient/change-password",
-    dependencies=[Depends(Authentication.access_required(Access.UPDATE_PATIENT))],
 )
 async def change_patient_password(request: Request, password_change: PasswordChange):
     return await update_password(request, password_change)
@@ -132,7 +128,6 @@ async def change_patient_password(request: Request, password_change: PasswordCha
 
 @router.patch(
     "/admin/change-password",
-    dependencies=[Depends(Authentication.access_required(Access.SUPER_ACCESS))],
 )
 async def change_admin_password(request: Request, password_change: PasswordChange):
     return await update_password(request, password_change)
@@ -140,7 +135,6 @@ async def change_admin_password(request: Request, password_change: PasswordChang
 
 @router.patch(
     "/doctor/change-password",
-    dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
 )
 async def change_doctor_password(request: Request, password_change: PasswordChange):
     return await update_password(request, password_change)
