@@ -5,6 +5,8 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
+from datetime import datetime, timezone
+
 from src.app import app, database
 from src.models import Access, Announcement, Hospital, LeaveRequest, Review, Role, Staff
 from src.utils import Authentication
@@ -20,6 +22,27 @@ class ClientRequest(BaseModel):
 
 router = APIRouter(tags=["Staff"])
 
+async def log(admin_id: str, message: str):
+    collection = database["hospitals"]
+    await collection.update_one(
+        {"admin_id": admin_id},
+        {
+            "$addToSet": {
+                "logs": {
+                    "message": message,
+                    "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                }
+            }
+        }
+    )
+
+@router.get(
+    "/hospital/{admin_id}/logs"
+)
+async def fetch_hospital_logs(admin_id: str):
+    collection = database["hospitals"]
+    hospital_data = await collection.find_one({"admin_id": admin_id})
+    return hospital_data.get("logs")
 
 @router.post(
     "/staff/create",
@@ -57,6 +80,7 @@ async def create_doctor(request: Request, staff: Staff):
             ),
         ),
         collection.insert_one(sendable),
+        log(hospital["admin_id"], f"You added doctor: {staff.first_name}")
     )
 
     return Staff.model_validate(sendable)
@@ -165,6 +189,13 @@ async def update_doctor(
 async def delete_doctor(doctor_id: str):
     collection = database["users"]
     await collection.update_one({"_id": doctor_id}, {"$set": {"active": False}})
+    doctor = await collection.find_one({"_id": doctor_id})
+    staff = Staff(**doctor)
+    hospital_data = await database["hospitals"].find_one({"id": staff.hospital_id})
+    hospital = Hospital(**hospital_data)
+
+    await log(hospital.admin_id, f"{staff.first_name} got deleted from system")
+
     return True
 
 
@@ -198,6 +229,9 @@ async def create_announcement(
         {"admin_id": admin_id},
         {"$addToSet": {"announcements": announcement_data}},
     )
+
+    await log(admin_id, "You created announcement")
+
     return {"success": True}
 
 
@@ -211,6 +245,7 @@ async def create_hospital(hospital: Hospital):
     sendable_data["_id"] = hospital.id
 
     hospital = await collection.insert_one(sendable_data)
+    await log(hospital.admin_id, "You onboarded Hospital")
     return {"success": True}
 
 

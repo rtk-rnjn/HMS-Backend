@@ -16,6 +16,20 @@ from src.utils.email import send_smtp_email
 router = APIRouter(tags=["Appointment"])
 
 
+async def log(admin_id: str, message: str):
+    collection = database["hospitals"]
+    await collection.update_one(
+        {"admin_id": admin_id},
+        {
+            "$addToSet": {
+                "logs": {
+                    "message": message,
+                    "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                }
+            }
+        }
+    )
+
 @router.post(
     "/appointment/create",
     dependencies=[Depends(Authentication.access_required(Access.CREATE_APPOINTMENT))],
@@ -57,6 +71,11 @@ async def create_appointment(request: Request, appointment: Appointment):
     appointment_data["patient_id"] = patient["id"]
 
     await appointment_collection.insert_one(appointment_data)
+
+    staff = await database["users"].find_one({"_id": doctor["id"]})
+    hospital = await database["hospital"].find_one({"id": staff["hospital_id"]})
+
+    # await log(hospital["admin_id"], f'{staff["first_name"]}')
 
     return {"success": True}
 
@@ -135,6 +154,9 @@ async def cancel_appointment(appointment_id: str):
             body=f"Your appointment with {staff.first_name} {staff.last_name} has been cancelled.",
             to=patient.email_address,
         )
+
+    hospital = await database["hospitals"].find_one({"_id": staff.hospital_id})
+    await log(hospital["admin_id"], f"{patient.first_name} cancelled appointment with {staff.first_name}")
 
     return {"success": True}
 
