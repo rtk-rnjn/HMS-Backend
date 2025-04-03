@@ -24,11 +24,14 @@ async def log(admin_id: str, message: str):
             "$addToSet": {
                 "logs": {
                     "message": message,
-                    "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                    "created_at": datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    ),
                 }
             }
-        }
+        },
     )
+
 
 @router.post(
     "/appointment/create",
@@ -156,7 +159,10 @@ async def cancel_appointment(appointment_id: str):
         )
 
     hospital = await database["hospitals"].find_one({"_id": staff.hospital_id})
-    await log(hospital["admin_id"], f"{patient.first_name} cancelled appointment with {staff.first_name}")
+    await log(
+        hospital["admin_id"],
+        f"{patient.first_name} cancelled appointment with {staff.first_name}",
+    )
 
     return {"success": True}
 

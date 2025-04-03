@@ -128,7 +128,6 @@ async def get_announcements(patient_id: str):
             if "Patient" in announcement["broadcast_to"]:
                 announcements.append(announcement)
 
-
     return [Announcement.model_validate(announcement) for announcement in announcements]
 
 

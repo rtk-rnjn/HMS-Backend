@@ -62,4 +62,31 @@ async def verify_payment(
     return f"Payment {razorpay_payment_link_status == 'paid'}. You may now close this window."
 
 
+@router.get("/bills/{admin_id}")
+async def bills(admin_id: str):
+    hospital_data = await database["hospitals"].find_one({"admin_id": admin_id})
+    doctor_ids = []
+
+    staffs = (
+        await database["users"].find({"hospital_id": hospital_data["id"]}).to_list(100)
+    )
+    doctor_ids = [staff["id"] for staff in staffs]
+    appointments = (
+        await database["appointments"]
+        .find(
+            {"doctor_id": {"$in": doctor_ids}, "razorpay_payment_id": {"$exists": True}}
+        )
+        .to_list(100)
+    )
+    razorpay_payloads = []
+
+    for appointmet in appointments:
+        razorpay_payloads.append(
+            razorpay_client.payment_link.fetch(appointmet["razorpay_payment_id"])
+        )
+
+    print(razorpay_payloads)
+    return razorpay_payloads
+
+
 app.include_router(router)

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
-
-from datetime import datetime, timezone
 
 from src.app import app, database
 from src.models import Access, Announcement, Hospital, LeaveRequest, Review, Role, Staff
@@ -22,6 +21,7 @@ class ClientRequest(BaseModel):
 
 router = APIRouter(tags=["Staff"])
 
+
 async def log(admin_id: str, message: str):
     collection = database["hospitals"]
     await collection.update_one(
@@ -30,19 +30,21 @@ async def log(admin_id: str, message: str):
             "$addToSet": {
                 "logs": {
                     "message": message,
-                    "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                    "created_at": datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    ),
                 }
             }
-        }
+        },
     )
 
-@router.get(
-    "/hospital/{admin_id}/logs"
-)
+
+@router.get("/hospital/{admin_id}/logs")
 async def fetch_hospital_logs(admin_id: str):
     collection = database["hospitals"]
     hospital_data = await collection.find_one({"admin_id": admin_id})
     return hospital_data.get("logs")
+
 
 @router.post(
     "/staff/create",
@@ -80,7 +82,7 @@ async def create_doctor(request: Request, staff: Staff):
             ),
         ),
         collection.insert_one(sendable),
-        log(hospital["admin_id"], f"You added doctor: {staff.first_name}")
+        log(hospital["admin_id"], f"You added doctor: {staff.first_name}"),
     )
 
     return Staff.model_validate(sendable)
