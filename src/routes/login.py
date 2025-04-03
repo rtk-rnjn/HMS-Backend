@@ -89,17 +89,18 @@ async def patient_login(user: UserLogin):
     return await authenticate_user(user.email_address, user.password, "patient")
 
 
-async def update_password(request: Request, password_change: PasswordChange):
+async def update_password(request: Request, password_change: PasswordChange, role: str):
     collection = database["users"]
     token = request.headers.get("Authorization").split(" ")[1]
     current_user = Authentication.get_current_user(token)
 
-    user = await collection.find_one({"email_address": current_user["sub"]})
+    user = await collection.find_one({"email_address": current_user["sub"], "role": role})
+    print(user)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
     await collection.update_one(
-        {"email_address": current_user["sub"]},
+        {"email_address": current_user["sub"], "role": role},
         {"$set": {"password": password_change.new_password}},
     )
     return {"success": True}
@@ -123,21 +124,21 @@ async def change_password(request: Request, password_change: HardPasswordChange)
     "/patient/change-password",
 )
 async def change_patient_password(request: Request, password_change: PasswordChange):
-    return await update_password(request, password_change)
+    return await update_password(request, password_change, role="patient")
 
 
 @router.patch(
     "/admin/change-password",
 )
 async def change_admin_password(request: Request, password_change: PasswordChange):
-    return await update_password(request, password_change)
+    return await update_password(request, password_change, role="admin")
 
 
 @router.patch(
     "/doctor/change-password",
 )
 async def change_doctor_password(request: Request, password_change: PasswordChange):
-    return await update_password(request, password_change)
+    return await update_password(request, password_change, role="doctor")
 
 
 app.include_router(router)
