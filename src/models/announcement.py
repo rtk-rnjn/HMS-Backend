@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 
 from pydantic import BaseModel
+from typing import List
 
 from .enums import AnnouncementCategory
 
@@ -21,3 +22,4 @@ class LeaveRequest(BaseModel):
     reason: str
     approved: bool = False
     created_at: str
+    dates: List[str]

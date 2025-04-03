@@ -105,7 +105,8 @@ async def get_doctor(doctor_id: str) -> Staff:
     "/staff/{doctor_id}/leave-request",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
 )
-async def apply_for_request(leave_request: LeaveRequest):
+async def apply_for_request(leave_request: dict):
+    leave_request = LeaveRequest(**leave_request)
     collection = database["users"]
     await collection.update_one(
         {"_id": leave_request.doctor_id},
