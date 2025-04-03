@@ -125,7 +125,7 @@ async def get_announcements(patient_id: str):
     announcements = []
     for hospital in hospitals:
         for announcement in hospital["announcements"]:
-            if "patient" in annotations["broadcast_to"]:
+            if "patient" in announcement["broadcast_to"]:
                 announcements.append(announcement)
 
 
