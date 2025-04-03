@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
-import uuid
 
 from src.app import app, database
-from src.models import Access, Appointment, Patient, Staff, Announcement, Role
+from src.models import Access, Announcement, Appointment, Patient, Role, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -60,6 +60,7 @@ async def create_appointment(request: Request, appointment: Appointment):
 
     return {"success": True}
 
+
 @router.get(
     "/appointment/{appointment_id}",
     dependencies=[Depends(Authentication.access_required(Access.READ_APPOINTMENT))],
@@ -108,6 +109,7 @@ async def get_appointments(doctor_id_or_patient_id: str, completed: bool = False
 
     return [Appointment.model_validate(appointment) for appointment in appointments]
 
+
 @router.delete(
     "/appointment/{appointment_id}/cancel",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_APPOINTMENT))],
@@ -142,25 +144,30 @@ async def cancel_appointment(appointment_id: str):
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_APPOINTMENT))],
 )
 async def mark_appointment_as_done(appointment: Appointment):
-    await database["appointments"].update_one({"_id": appointment.id}, {"$set": {"status": "Completed"}})
+    await database["appointments"].update_one(
+        {"_id": appointment.id}, {"$set": {"status": "Completed"}}
+    )
 
     collection = database["users"]
     date_format = "%Y-%m-%dT%H:%M:%SZ"
     now = datetime.now(timezone.utc)
     date_string = now.strftime(date_format)
 
-    announcement = Announcement(title="Appointment Updated", body="Your appointment is completed, and marked as done.", created_at=date_string, broadcast_to=[Role.PATIENT], category="General")
+    announcement = Announcement(
+        title="Appointment Updated",
+        body="Your appointment is completed, and marked as done.",
+        created_at=date_string,
+        broadcast_to=[Role.PATIENT],
+        category="General",
+    )
     announcement_data = announcement.model_dump(mode="json")
 
     await collection.update_one(
         {"_id": appointment["patient_id"]},
-        {
-            "$addToSet": {"announcements": announcement_data}
-        }
+        {"$addToSet": {"announcements": announcement_data}},
     )
 
     return {"success": True}
-
 
 
 app.include_router(router)

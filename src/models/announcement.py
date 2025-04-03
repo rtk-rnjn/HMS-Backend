@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
 import uuid
+
+from pydantic import BaseModel
+
 from .enums import AnnouncementCategory
 
 

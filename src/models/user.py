@@ -21,9 +21,11 @@ class UserBase(BaseModel):
 class Admin(UserBase):
     role: str = Role.ADMIN
 
+
 class WorkingHours(BaseModel):
     start_time: str
     end_time: str
+
 
 class Staff(UserBase):
     first_name: str

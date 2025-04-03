@@ -125,6 +125,7 @@ async def get_announcements(patient_id: str):
     ).to_list(length=100)
     return [Announcement.model_validate(announcement) for announcement in announcements]
 
+
 @router.get(
     "/patient/{patient_id}/my-announcements",
     dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
@@ -132,7 +133,11 @@ async def get_announcements(patient_id: str):
 async def get_my_announcements(patient_id):
     collection = database["users"]
     patient = collection.find_one({"_id": patient_id})
-    return [Announcement.model_validate(announcement) for announcement in patient.get("announcements", [])]
+    return [
+        Announcement.model_validate(announcement)
+        for announcement in patient.get("announcements", [])
+    ]
+
 
 @router.post(
     "/patient/{patient_id}/medical-report",

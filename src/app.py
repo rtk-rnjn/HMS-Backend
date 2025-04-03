@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import os
+from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -30,7 +29,9 @@ RAZORPAY_KEY = os.getenv("RAZORPAY_KEY")
 RAZORPAY_SECRET = os.getenv("RAZORPAY_SECRET")
 
 razorpay_client = Client(auth=(RAZORPAY_KEY, RAZORPAY_SECRET))
-razorpay_client.set_app_details({"title" : "Hospital Management System", "version" : "Initial 0.1"})
+razorpay_client.set_app_details(
+    {"title": "Hospital Management System", "version": "Initial 0.1"}
+)
 
 
 app = FastAPI(

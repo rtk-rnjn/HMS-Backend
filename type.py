@@ -41,7 +41,7 @@ _WriteOp = Union[  # noqa: UP007
     UpdateMany,
 ]
 
-from typing import Literal, Union, TypedDict
+from typing import Literal, TypedDict, Union
 
 if TYPE_CHECKING:
     pass
