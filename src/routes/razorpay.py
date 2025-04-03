@@ -50,9 +50,10 @@ async def verify_payment(razorpay_payment_id: str, razorpay_payment_link_id: str
 
     sendable = cache[razorpay_payment_link_id].model_dump(mode="json")
     sendable["_id"] = sendable["id"]
+    sendable["razorpay_payment_id"] = razorpay_payment_link_id
     await database["appointments"].insert_one(sendable)
 
     return f"Payment {razorpay_payment_link_status == 'paid'}. You may now close this window."
-    
+
 
 app.include_router(router)

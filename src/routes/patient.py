@@ -118,13 +118,21 @@ async def update_prescription(patient_id: str, data: dict):
     "/patient/{patient_id}/announcements",
     dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
 )
-async def get_announcement(patient_id: str):
+async def get_announcements(patient_id: str):
     collection = database["hospitals"]
     announcements = collection.find(
         {"announcements.broadcast_to": "patient"}, {"announcements.$": 1}
     ).to_list(length=100)
     return [Announcement.model_validate(announcement) for announcement in announcements]
 
+@router.get(
+    "/patient/{patient_id}/my-announcements",
+    dependencies=[Depends(Authentication.access_required(Access.READ_ANNOUNCEMENT))],
+)
+async def get_my_announcements(patient_id):
+    collection = database["users"]
+    patient = collection.find_one({"_id": patient_id})
+    return [Announcement.model_validate(announcement) for announcement in patient.get("announcements", [])]
 
 @router.post(
     "/patient/{patient_id}/medical-report",

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Announcement, Hospital, Review, Role, Staff
+from src.models import Access, Announcement, Hospital, Review, Role, Staff, LeaveRequest
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 
@@ -75,6 +75,48 @@ async def get_doctor(doctor_id: str) -> Staff:
     return Staff.model_validate(doctor)
 
 
+@router.post(
+    "/staff/{doctor_id}/leave-request",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
+)
+async def apply_for_request(leave_request: LeaveRequest):
+    collection = database["users"]
+    await collection.update_one({"_id": leave_request.doctor_id}, {"$addToSet": {"leave_requests": leave_request.model_dump(mode="json")}})
+
+    return {"success": True}
+
+@router.get(
+    "/staff/{doctor_id}/leave-request",
+    dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
+)
+async def get_leave_request(doctor_id: str):
+    collection = database["users"]
+    doctor_data = await collection.find_one({"_id": doctor_id})
+    return [LeaveRequest.model_validate(request) for request in doctor_data["leave_requests"]]
+
+@router.patch(
+    "/staff/{doctor_id}/leave-request/{request_id}",
+    dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
+)
+async def approve_request(doctor_id: str, request_id: str):
+    collection = database["users"]
+    result = await collection.update_one(
+        {
+            "doctor_id": doctor_id,
+            "leave_requests.id": request_id
+        },
+        {
+            "$set": {
+                "leave_requests.$.approved": True
+            }
+        }
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Leave request not found")
+
+    return {"success": True}
+
 @router.get(
     "/staff",
     dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
@@ -141,8 +183,7 @@ async def get_hospital(request: Request, admin_id: str) -> Hospital:
     "/hospital/{admin_id}/create-announcement",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_HOSPITAL))],
 )
-async def create_announcement(request: Request, admin_id: str, announcement: dict):
-    announcement = Announcement(**announcement)
+async def create_announcement(request: Request, admin_id: str, announcement: Announcement):
     collection = database["hospitals"]
     hospital = await collection.find_one({"admin_id": admin_id})
     if hospital is None:
