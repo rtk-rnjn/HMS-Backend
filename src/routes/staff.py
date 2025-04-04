@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
 from src.app import app, database
-from src.models import Access, Announcement, Hospital, LeaveRequest, Review, Role, Staff
+from src.models import Access, Announcement, Hospital, LeaveRequest, Review, Role, Staff, Patient
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
 import uuid
@@ -154,16 +154,36 @@ async def approve_request(leave_request: LeaveRequest):
     appointments = await database["appointments"].find({"doctor_id": leave_request.doctor_id}).to_list(100)
     leave_dates = {date_string[:10] for date_string in updated_request["dates"]}
 
+    print("Leave Dates", leave_dates)
+
     for date_string in updated_request["dates"]:
         # Date String: "%Y-%m-%dT%H:%M:%SZ"
 
         for appointment_data in appointments:
             start_date_string = appointment_data["start_date"]
             start_date_only = start_date_string[:10]
+            print("Start date", start_date_only)
             if start_date_only in leave_dates:
-                # cancel_appointment(appointment_data)
-                pass
+                appointment = await database["appointments"].find_one({"_id": appointment_data["_id"], "razorpay_payment_id": {"$exists": True}})
+                if not appointment:
+                    raise HTTPException(status_code=404, detail="Appointment not found")
 
+                await database["appointments"].update_one(
+                    {"_id": appointment_data["_id"]}, {"$set": {"cancelled": True, "doctor_id": "", "patient_id": ""}}
+                )
+
+                # razorpay_client.payment.refund("pay_" + appointment["razorpay_payment_id"].split("_")[1])
+
+                patient_data = await database["users"].find_one({"_id": appointment["patient_id"]})
+
+                patient = Patient(**patient_data)
+
+                if patient:
+                    await send_smtp_email(
+                        to_email=patient.email_address,
+                        subject="Appointment Cancelled",
+                        body=f"Your appointment with has been cancelled. Refund initiated.",
+                    )
 
     return {"success": True}
 
