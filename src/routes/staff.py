@@ -144,9 +144,10 @@ async def get_leave_request(doctor_id: str):
 async def approve_request(leavel_request: LeaveRequest):
     collection = database["leave_requests"]
 
-    result = await collection.update_one(
-        {"_id": leavel_request.id}, {"$set": {"approved": True}}
+    data = await collection.update_one(
+        {"doctor_id": leavel_request.doctor_id}, {"$set": {"approved": True}}
     )
+    print(data)
 
     return {"success": True}
 
