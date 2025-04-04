@@ -213,7 +213,7 @@ async def fetch_leave_requests(admin_id: str):
     staffs = await database["users"].find({"hospital_id": hospital_id}).to_list(100)
     staff_ids = [staff["id"] for staff in staffs]
 
-    leave_requests = await database["leave_requests"].find({"doctor_id": {"$in": staff_ids}, "approved": False}).to_list(100)
+    leave_requests = await database["leave_requests"].find({"doctor_id": {"$in": staff_ids}}).to_list(100)
 
     return leave_requests
 
