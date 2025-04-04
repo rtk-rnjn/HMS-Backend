@@ -10,6 +10,7 @@ from src.app import app, database
 from src.models import Access, Announcement, Hospital, LeaveRequest, Review, Role, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
+import uuid
 
 with open("src/utils/email-body-account-created.txt", "r") as f:
     EMAIL_BODY_ACCOUNT_CREATED = f.read()
@@ -105,12 +106,17 @@ async def get_doctor(doctor_id: str) -> Staff:
     "/staff/{doctor_id}/leave-request",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
 )
-async def apply_for_request(leave_request: dict):
-    leave_request = LeaveRequest(**leave_request)
-    collection = database["users"]
-    await collection.update_one(
-        {"_id": leave_request.doctor_id},
-        {"$addToSet": {"leave_requests": leave_request.model_dump(mode="json")}},
+async def apply_for_request(leave_request: LeaveRequest):
+    collection = database["leave_requests"]
+    await collection.insert_one(
+        {
+            "_id": leave_request.id,
+            "doctor_id": leave_request.doctor_id,
+            "dates": leave_request.dates,
+            "reason": leave_request.reason,
+            "approved": leave_request.approved,
+            "created_at": leave_request.created_at
+        },
     )
 
     return {"success": True}
@@ -121,30 +127,43 @@ async def apply_for_request(leave_request: dict):
     dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
 )
 async def get_leave_request(doctor_id: str):
-    collection = database["users"]
-    doctor_data = await collection.find_one({"_id": doctor_id})
-    return [
-        LeaveRequest.model_validate(request)
-        for request in doctor_data["leave_requests"]
-    ]
+    collection = database["leave_requests"]
+    leave_requests = await collection.find({"doctor_id": doctor_id}).to_list(100)
 
+    requests = []
+    for leave_request in leave_requests:
+
+        requests.append(LeaveRequest(**leave_request))
+
+    return requests
 
 @router.patch(
-    "/staff/{doctor_id}/leave-request/{request_id}",
+    "/staff/leave-request",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
 )
-async def approve_request(doctor_id: str, request_id: str):
-    collection = database["users"]
-    result = await collection.update_one(
-        {"doctor_id": doctor_id, "leave_requests.id": request_id},
-        {"$set": {"leave_requests.$.approved": True}},
-    )
+async def approve_request(leavel_request: LeaveRequest):
+    collection = database["leave_requests"]
 
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Leave request not found")
+    result = await collection.update_one(
+        {"_id": leavel_request.id}, {"$set": {"approved": True}}
+    )
 
     return {"success": True}
 
+
+@router.get(
+    "/hospital/{admin_id}/leave-requests"
+)
+async def fetch_leave_requests(admin_id: str):
+    hospital_data = await database["hospitals"].find_one({"admin_id": admin_id})
+    hospital_id = hospital_data["id"]
+
+    staffs = await database["users"].find({"hospital_id": hospital_id}).to_list(100)
+    staff_ids = [staff["id"] for staff in staffs]
+
+    leave_requests = await database["leave_requests"].find({"doctor_id": {"$in": staff_ids}}).to_list(100)
+
+    return leave_requests
 
 @router.get(
     "/staff",

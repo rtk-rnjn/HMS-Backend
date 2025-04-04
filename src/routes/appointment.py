@@ -8,7 +8,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket
 from pydantic import BaseModel
 
-from src.app import app, database
+from src.app import app, database, razorpay_client
 from src.models import Access, Announcement, Appointment, Patient, Role, Staff
 from src.utils import Authentication
 from src.utils.email import send_smtp_email
@@ -138,42 +138,37 @@ async def get_appointments(doctor_id_or_patient_id: str, completed: bool = False
 )
 async def cancel_appointment(appointment_id: str):
 
-    appointment = await database["appointments"].find_one({"_id": appointment_id})
+    appointment = await database["appointments"].find_one({"_id": appointment_id, "razorpay_payment_id": {"$exists": True}})
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
     await database["appointments"].update_one(
-        {"_id": appointment_id}, {"$set": {"cancelled": True}}
+        {"_id": appointment_id}, {"$set": {"cancelled": True, "doctor_id": "", "patient_id": ""}}
     )
 
+    # razorpay_client.payment.refund("pay_" + appointment["razorpay_payment_id"].split("_")[1])
+
     patient_data = await database["users"].find_one({"_id": appointment["patient_id"]})
-    staff_data = await database["users"].find_one({"_id": appointment["doctor_id"]})
-    staff = Staff(**staff_data)
+
     patient = Patient(**patient_data)
 
     if patient:
         await send_smtp_email(
+            to_email=patient.email_address,
             subject="Appointment Cancelled",
-            body=f"Your appointment with {staff.first_name} {staff.last_name} has been cancelled.",
-            to=patient.email_address,
+            body=f"Your appointment with has been cancelled. Refund initiated.",
         )
 
-    hospital = await database["hospitals"].find_one({"_id": staff.hospital_id})
-    await log(
-        hospital["admin_id"],
-        f"{patient.first_name} cancelled appointment with {staff.first_name}",
-    )
-
-    return {"success": True}
+    return True
 
 
 @router.patch(
     "/appointment/{appointment_id}/mark-as-done",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_APPOINTMENT))],
 )
-async def mark_appointment_as_done(appointment: Appointment):
+async def mark_appointment_as_done(appointment_id: str):
     await database["appointments"].update_one(
-        {"_id": appointment.id}, {"$set": {"status": "Completed"}}
+        {"_id": appointment_id}, {"$set": {"status": "Completed"}}
     )
 
     collection = database["users"]
@@ -189,6 +184,7 @@ async def mark_appointment_as_done(appointment: Appointment):
         category="General",
     )
     announcement_data = announcement.model_dump(mode="json")
+    appointment = await database["appointments"].find_one({"_id": appointment_id})
 
     await collection.update_one(
         {"_id": appointment["patient_id"]},

@@ -137,7 +137,7 @@ async def get_announcements(patient_id: str):
 )
 async def get_my_announcements(patient_id):
     collection = database["users"]
-    patient = collection.find_one({"_id": patient_id})
+    patient = await collection.find_one({"_id": patient_id})
     return [
         Announcement.model_validate(announcement)
         for announcement in patient.get("announcements", [])

@@ -57,18 +57,19 @@ async def search_doctor_by_department(query: str):
 
 @router.get(
     "/search/doctors/symptoms",
-    dependencies=[Depends(Authentication.access_required(Access.READ_STAFF))],
 )
 async def search_doctor_by_symptoms(symptoms: str):
     collection = database["users"]
-    data = await collection.find({"role": "doctor", "active": True}).to_list(100)
-    staffs = [Staff.model_validate(staff) for staff in data]
-
+    staffs = await collection.find({"role": "doctor", "active": True}).to_list(100)
+    
     id = get_doctor_id(symptoms, str(staffs))
 
+    if id == "None":
+        raise HTTPException(404, detail="No doctor found")
+
     for staff in staffs:
-        if staff.id == id:
-            return staff
+        if staff["id"] == id:
+            return Staff(**staff)
 
     raise HTTPException(404, detail="No doctor found")
 
