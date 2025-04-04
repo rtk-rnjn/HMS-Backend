@@ -147,6 +147,19 @@ async def approve_request(leave_request: LeaveRequest):
     data = await collection.update_one(
         {"doctor_id": leave_request.doctor_id}, {"$set": {"approved": True}}
     )
+    staff = await collection.find_one(
+        {"_id": leave_request.doctor_id}
+    )
+
+    try:
+        await send_smtp_email(
+            to_email=staff["email_address"],
+            subject="Leave Approved",
+            body=f"Admin approved your leave request.",
+        )
+    except Exception:
+        pass
+
     updated_request = await collection.find_one(
         {"doctor_id": leave_request.doctor_id}
     )
