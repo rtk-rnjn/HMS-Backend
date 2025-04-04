@@ -174,16 +174,18 @@ async def approve_request(leave_request: LeaveRequest):
 
                 # razorpay_client.payment.refund("pay_" + appointment["razorpay_payment_id"].split("_")[1])
 
-                patient_data = await database["users"].find_one({"_id": appointment["patient_id"]})
+                try:
+                    patient_data = await database["users"].find_one({"_id": appointment["patient_id"]})
+                    patient = Patient(**patient_data)
 
-                patient = Patient(**patient_data)
-
-                if patient:
-                    await send_smtp_email(
-                        to_email=patient.email_address,
-                        subject="Appointment Cancelled",
-                        body=f"Your appointment with has been cancelled. Refund initiated.",
-                    )
+                    if patient:
+                        await send_smtp_email(
+                            to_email=patient.email_address,
+                            subject="Appointment Cancelled",
+                            body=f"Your appointment with has been cancelled. Refund initiated.",
+                        )
+                except Exception:
+                    pass
 
     return {"success": True}
 
