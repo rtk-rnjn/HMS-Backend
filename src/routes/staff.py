@@ -141,13 +141,29 @@ async def get_leave_request(doctor_id: str):
     "/staff/leave-request",
     dependencies=[Depends(Authentication.access_required(Access.UPDATE_STAFF))],
 )
-async def approve_request(leavel_request: LeaveRequest):
+async def approve_request(leave_request: LeaveRequest):
     collection = database["leave_requests"]
 
     data = await collection.update_one(
-        {"doctor_id": leavel_request.doctor_id}, {"$set": {"approved": True}}
+        {"doctor_id": leave_request.doctor_id}, {"$set": {"approved": True}}
     )
-    print(data)
+    updated_request = await collection.find_one(
+        {"doctor_id": leave_request.doctor_id}
+    )
+
+    appointments = await database["appointments"].find({"doctor_id": leave_request.doctor_id}).to_list(100)
+    leave_dates = {date_string[:10] for date_string in updated_request["dates"]}
+
+    for date_string in updated_request["dates"]:
+        # Date String: "%Y-%m-%dT%H:%M:%SZ"
+
+        for appointment_data in appointments:
+            start_date_string = appointment_data["start_date"]
+            start_date_only = start_date_string[:10]
+            if start_date_only in leave_dates:
+                # cancel_appointment(appointment_data)
+                pass
+
 
     return {"success": True}
 
@@ -267,8 +283,8 @@ async def create_hospital(hospital: Hospital):
     sendable_data = hospital.model_dump(mode="json")
     sendable_data["_id"] = hospital.id
 
-    hospital = await collection.insert_one(sendable_data)
-    await log(hospital.admin_id, "You onboarded Hospital")
+    await collection.insert_one(sendable_data)
+    await log(hospital.admin_id, f"You onboarded Hospital: {hospital.name}")
     return {"success": True}
 
 
