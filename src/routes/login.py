@@ -27,7 +27,7 @@ ACCESS_MAP = {
     "patient": PATIENT_ACCESS,
 }
 
-ACCESS_MAP_CLASS: dict[str:BaseModel] = {
+ACCESS_MAP_CLASS: dict[str, BaseModel] = {
     "admin": Admin,
     "doctor": Staff,
     "patient": Patient,
