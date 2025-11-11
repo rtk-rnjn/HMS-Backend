@@ -34,7 +34,6 @@ pyasn1_modules
 pycparser
 pydantic
 pydantic_core
-pyenchant
 PyJWT
 pymongo
 python-dotenv

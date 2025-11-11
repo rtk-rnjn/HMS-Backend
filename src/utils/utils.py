@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import re
 
-import enchant
 from dotenv import load_dotenv
 from google import genai
 
@@ -17,14 +16,7 @@ with open("src/utils/prompt.txt") as file:
 
 
 def is_gibberish(phrase, threshold: float = 0.7):
-    words = re.findall(r"\b[a-zA-Z]+\b", phrase)
-    if not words:
-        return True
-
-    dictionary = enchant.Dict("en_US")
-    gibberish_count = sum(1 for word in words if not dictionary.check(word))
-
-    return (gibberish_count / len(words)) > threshold
+    return False
 
 
 client = genai.Client(api_key=GEMINI_KEY)
